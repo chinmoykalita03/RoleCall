@@ -3,29 +3,31 @@ import FileUpload from "./components/FileUpload";
 import JobTable from "./components/JobTable";
 import axios from "axios";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
 function App() {
   const [jobs, setJobs] = useState([]);
 
   useEffect(() => {
-    axios.get("http://localhost:5000/api/jobs").then(res => setJobs(res.data));
+    axios.get(`${API_URL}/api/jobs`).then(res => setJobs(res.data));
   }, []);
 
   const handleStatusChange = async (id, newStatus) => {
-    await axios.patch(`http://localhost:5000/api/jobs/${id}`, { status: newStatus });
+    await axios.patch(`${API_URL}/api/jobs/${id}`, { status: newStatus });
     setJobs(jobs.map(job => job._id === id ? { ...job, status: newStatus } : job));
   };
 
   const handleDelete = async (id) => {
-    await axios.delete(`http://localhost:5000/api/jobs/${id}`);
+    await axios.delete(`${API_URL}/api/jobs/${id}`);
     setJobs(jobs.filter(job => job._id !== id));
   };
 
   const handleEdit = async (id, editFields) => {
-  await axios.patch(`http://localhost:5000/api/jobs/${id}/edit`, editFields);
-  // refresh
-  const updated = await axios.get("http://localhost:5000/api/jobs");
-  setJobs(updated.data);
-};
+    await axios.patch(`${API_URL}/api/jobs/${id}/edit`, editFields);
+    // refresh
+    const updated = await axios.get(`${API_URL}/api/jobs`);
+    setJobs(updated.data);
+  };
 
 
   return (

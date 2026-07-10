@@ -15,9 +15,9 @@ app.use(express.json());
 // ✅ MongoDB Connection
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
-    app.listen(process.env.PORT, () => {
+    app.listen(PORT, () => {
       console.log(`✅ MongoDB connected`);
-      console.log(`🚀 Server running at http://localhost:${process.env.PORT}`);
+      console.log(`🚀 Server running at http://localhost:${PORT}`);
     });
   })
   .catch((err) => {

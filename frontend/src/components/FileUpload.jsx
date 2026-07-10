@@ -2,6 +2,8 @@ import { useDropzone } from 'react-dropzone';
 import axios from 'axios';
 import { UploadCloud } from 'lucide-react';
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
 function FileUpload({ onUploadSuccess }) {
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: { 'application/pdf': [] },
@@ -10,7 +12,7 @@ function FileUpload({ onUploadSuccess }) {
       formData.append("file", acceptedFiles[0]);
 
       try {
-        const res = await axios.post("http://localhost:5000/api/upload", formData);
+        const res = await axios.post(`${API_URL}/api/upload`, formData);
         onUploadSuccess(res.data);
       } catch (err) {
         console.error("Upload failed", err);
