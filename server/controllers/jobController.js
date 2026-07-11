@@ -11,16 +11,45 @@ cloudinary.config({
 });
 
 exports.uploadJob = async (req, res) => {
-  const filePath = req.file.path;
-  const result = await cloudinary.uploader.upload(filePath, { resource_type: "raw" });
+  let filePath = null;
+  try {
+    filePath = req.file.path;
+    console.log(`📤 Uploading file to Cloudinary: ${filePath}`);
+    const result = await cloudinary.uploader.upload(filePath, { resource_type: "raw" });
+    console.log(`✅ Cloudinary upload successful: ${result.secure_url}`);
 
-  const aiRes = await axios.post(process.env.AI_URL, { pdf_url: result.secure_url });
-  const { company, role, deadline } = aiRes.data;
+    let company = "Unknown";
+    let role = "Unknown";
+    let deadline = "Not Found";
 
-  const job = await Job.create({ pdfUrl: result.secure_url, company, role, deadline });
-  fs.unlinkSync(filePath);
+    try {
+      console.log(`🤖 Sending text extraction request to AI service: ${process.env.AI_URL}`);
+      const aiRes = await axios.post(process.env.AI_URL, { pdf_url: result.secure_url }, { timeout: 45000 });
+      if (aiRes.data) {
+        company = aiRes.data.company || "Unknown";
+        role = aiRes.data.role || "Unknown";
+        deadline = aiRes.data.deadline || "Not Found";
+        console.log(`✅ AI extraction successful:`, aiRes.data);
+      }
+    } catch (aiErr) {
+      console.error(`⚠️ AI extraction failed or timed out: ${aiErr.message}. Falling back to default values.`);
+    }
 
-  res.json(job);
+    const job = await Job.create({ pdfUrl: result.secure_url, company, role, deadline });
+    
+    // Clean up local temp file
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+
+    res.json(job);
+  } catch (err) {
+    console.error(`❌ Upload error:`, err);
+    if (filePath && fs.existsSync(filePath)) {
+      try { fs.unlinkSync(filePath); } catch (e) {}
+    }
+    res.status(500).json({ error: "Failed to upload and parse job description PDF." });
+  }
 };
 
 exports.getJobs = async (req, res) => {
